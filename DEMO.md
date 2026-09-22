@@ -241,35 +241,62 @@ Also point at the Jenkins build page sidebar:
 
 ---
 
-## Act 6 — A code change goes live (3 min)
+## Act 6 — A code change goes live (5 min) ★
 
-Add a task in the browser first, so you can show it survives.
+Add two or three tasks in the browser first, so you can show they survive.
+
+> **SAY:** "Now the thing you actually care about: I change the code, and the
+> change appears on the site without me touching a server."
+
+Open **`demo/01-search-box.md`** and follow it — four small copy-paste edits that
+add a **search box** to the page:
+
+| # | File | Change |
+|---|---|---|
+| 1 | `app/pyproject.toml` | version `1.0.0` → `1.1.0` |
+| 2 | `app/src/taskboard/app.py` | filter the task list by a search term |
+| 3 | `.../templates/index.html` | the text box itself + a little CSS |
+| 4 | `app/tests/test_app.py` | a test for the new behaviour |
+
+> **SAY while typing edit 4:** "Notice I am writing a test for the feature. That
+> is not ceremony — in a minute the pipeline will run it, and that is what lets
+> me say the new feature was verified before it shipped."
+
+Commit:
 
 ```bash
-sed -i '' 's/version = "1.0.0"/version = "1.1.0"/' app/pyproject.toml
-git commit -am "release 1.1.0"
+git commit -am "add task search box"
 ```
 
-> **SAY:** "I've made a change and committed it. In a real setup a merged pull
-> request would trigger this automatically. Here I click the button."
+> **SAY:** "In a real setup, merging this as a pull request would trigger the
+> build on its own. Here I click the button."
 
-**Build Now** → wait for green → refresh **http://localhost:8000**.
+**Build Now** → watch it go green → refresh **http://localhost:8000**.
 
-> **SAY:** "Version footer went from 1.0.0 to 1.1.0 — new code is live. And look:
-> the task I added is still there. New release, same database. That is the
-> `shared/` directory earning its keep.
+> **SAY:** "There is the search box — new UI, live, and I never touched a server.
+> The footer went 1.0.0 → 1.1.0, so I know exactly which build I am looking at.
+>
+> And the tasks I added before the deploy are still here. New code, same
+> database. That is the `shared/` directory earning its keep.
 >
 > This is the single most common thing that goes wrong in homemade deploy
 > scripts: someone puts the database inside the release folder, and every deploy
 > quietly wipes production data."
 
+Try the box: search a word, then click **clear**.
+
 ```bash
 docker compose exec jenkins ls /var/jenkins_home/deploy/releases
 ```
 
-> **SAY:** "Two releases now. The old one is kept, ready to roll back to."
+> **SAY:** "Two releases now. The old one is kept, sitting there ready to roll
+> back to — which we are about to need."
 
----
+**If a live edit goes wrong mid-demo**, the identical change is saved as a patch:
+
+```bash
+git checkout -- app && git apply demo/01-search-box.patch
+```
 
 ## Act 7 — Breaking a test blocks the deploy (3 min) ★
 
@@ -477,8 +504,9 @@ they are honest.
 
 Work through these in order. Each one is a real pipeline skill.
 
-1. **Change the app, ship it.** Add a task-count to the page heading. Commit,
-   Build Now, see it live. *Goal: the full loop feels routine.*
+1. **Change the app, ship it.** Work through `demo/01-search-box.md` yourself:
+   four edits, commit, Build Now, see it live. Then do one of your own — show a
+   task count in the heading. *Goal: the full loop feels routine.*
 
 2. **Write a failing test on purpose, then fix it.** Watch the build go red and
    Deploy get skipped. *Goal: internalise that CI gates deployment.*

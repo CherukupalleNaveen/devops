@@ -1,0 +1,78 @@
+diff --git a/app/pyproject.toml b/app/pyproject.toml
+index 8885d3d..649f626 100644
+--- a/app/pyproject.toml
++++ b/app/pyproject.toml
+@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
+ 
+ [project]
+ name = "taskboard"
+-version = "1.0.0"
++version = "1.1.0"
+ description = "Tiny task tracker - the deployable unit in the Jenkins CD demo"
+ requires-python = ">=3.9"
+ dependencies = [
+diff --git a/app/src/taskboard/app.py b/app/src/taskboard/app.py
+index 8134cf5..cbac3f9 100644
+--- a/app/src/taskboard/app.py
++++ b/app/src/taskboard/app.py
+@@ -50,8 +50,14 @@ def close_db(_exc):
+ 
+ @app.get("/")
+ def index():
+-    rows = get_db().execute("SELECT * FROM tasks ORDER BY done, id DESC").fetchall()
+-    return render_template("index.html", tasks=rows, version=app_version())
++    q = (request.args.get("q") or "").strip()
++    if q:
++        rows = get_db().execute(
++            "SELECT * FROM tasks WHERE title LIKE ? ORDER BY done, id DESC", (f"%{q}%",)
++        ).fetchall()
++    else:
++        rows = get_db().execute("SELECT * FROM tasks ORDER BY done, id DESC").fetchall()
++    return render_template("index.html", tasks=rows, version=app_version(), q=q)
+ 
+ 
+ @app.post("/tasks")
+diff --git a/app/src/taskboard/templates/index.html b/app/src/taskboard/templates/index.html
+index 8a31197..2e5658f 100644
+--- a/app/src/taskboard/templates/index.html
++++ b/app/src/taskboard/templates/index.html
+@@ -9,7 +9,8 @@
+     body { font: 16px/1.5 system-ui, sans-serif; max-width: 34rem; margin: 3rem auto; padding: 0 1rem; }
+     h1 { margin-bottom: .25rem; }
+     .version { color: #888; font-size: .85rem; margin-bottom: 2rem; }
+-    form.add { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
++    form.add, form.search { display: flex; gap: .5rem; margin-bottom: 1.5rem; align-items: center; }
++    form.search a { font-size: .85rem; color: #888; }
+     input[type=text] { flex: 1; padding: .6rem; font-size: 1rem; border: 1px solid #8884; border-radius: 6px; background: transparent; color: inherit; }
+     button { padding: .6rem 1rem; font-size: 1rem; border: 1px solid #8884; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+     ul { list-style: none; padding: 0; }
+@@ -23,6 +24,12 @@
+   <h1>Taskboard</h1>
+   <p class="version">deployed version <strong>{{ version }}</strong></p>
+ 
++  <form class="search" method="get" action="/">
++    <input type="text" name="q" value="{{ q }}" placeholder="Search tasks...">
++    <button type="submit">Search</button>
++    {% if q %}<a href="/">clear</a>{% endif %}
++  </form>
++
+   <form class="add" method="post" action="/tasks">
+     <input type="text" name="title" placeholder="What needs doing?" autofocus>
+     <button type="submit">Add</button>
+diff --git a/app/tests/test_app.py b/app/tests/test_app.py
+index fb3231a..606b64f 100644
+--- a/app/tests/test_app.py
++++ b/app/tests/test_app.py
+@@ -42,3 +42,12 @@ def test_toggle_flips_done(client):
+     assert client.get("/api/tasks").get_json()[0]["done"] == 1
+     client.post(f"/tasks/{tid}/toggle")
+     assert client.get("/api/tasks").get_json()[0]["done"] == 0
++
++
++def test_search_filters_list(client):
++    client.post("/tasks", data={"title": "buy milk"})
++    client.post("/tasks", data={"title": "write pipeline"})
++    assert b"buy milk" in client.get("/?q=milk").data
++    assert b"write pipeline" not in client.get("/?q=milk").data
++    # no query returns everything
++    assert b"write pipeline" in client.get("/").data
