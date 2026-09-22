@@ -13,5 +13,9 @@ USER jenkins
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
 
-# Cloning the bind-mounted repo trips git's "dubious ownership" check otherwise.
-RUN git config --global --add safe.directory '*'
+# Cloning the bind-mounted repo trips git's "dubious ownership" check.
+# Must be --system: /var/jenkins_home is a volume, so a per-user ~/.gitconfig
+# baked into the image gets masked at runtime.
+USER root
+RUN git config --system --add safe.directory '*'
+USER jenkins
