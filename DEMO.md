@@ -136,8 +136,13 @@ cat Jenkinsfile
 **Now prove it — run the entire production pipeline with no Jenkins at all:**
 
 ```bash
-./ci/ci.sh all
+APP_PORT=8001 ./ci/ci.sh all
 ```
+
+> Port 8001, not 8000: the Jenkins container already publishes 8000 on your Mac,
+> so a local deploy would collide with it. Same script, different port — which is
+> itself a small lesson in why the script takes configuration from the
+> environment.
 
 > **SAY:** "That just did everything Jenkins is about to do — on my laptop, no
 > job, no commit, no waiting in a queue. Same script, same commands.
@@ -151,13 +156,13 @@ cat Jenkinsfile
 > The anti-pattern is 300 lines of Groovy in a Jenkinsfile that can only ever run
 > inside Jenkins. You will see it in the wild. Don't write it."
 
-Open **http://localhost:8000** — the app is live, deployed by that one command.
+Open **http://localhost:8001** — the app is live, deployed by that one command.
 Add a task in the browser.
 
-Now stop it, because Jenkins is about to deploy it properly:
+Now stop it, because Jenkins is about to deploy the real thing on port 8000:
 
 ```bash
-./ci/ci.sh stop
+APP_PORT=8001 ./ci/ci.sh stop
 ```
 
 ---
@@ -459,6 +464,11 @@ they are honest.
   the stage instead of silently continuing into a deploy.
 - **The trailing slash matters** on webhook URLs (`/github-webhook/`) when you
   add GitHub later.
+- **Port collisions look like application crashes.** The Jenkins container
+  publishes 8000, so a *host* deploy on 8000 fails with a health-check timeout
+  that looks like a broken app. `ci/ci.sh` now checks the port up front and says
+  so plainly — but this is exactly the class of bug where the symptom and the
+  cause are nowhere near each other. Good thing to say out loud.
 
 ---
 

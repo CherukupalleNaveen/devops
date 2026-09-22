@@ -91,6 +91,20 @@ start_app() {
       "taskboard.app:app"
 }
 
+port_free() {
+  # python3 is guaranteed present (the Dockerfile installs it); lsof is not.
+  python3 -c "
+import socket, sys
+s = socket.socket()
+try:
+    s.bind(('0.0.0.0', $APP_PORT))
+except OSError:
+    sys.exit(1)
+finally:
+    s.close()
+" 2>/dev/null
+}
+
 health_check() {
   log "health check: http://localhost:$APP_PORT/health"
   for _ in $(seq 30); do
@@ -124,6 +138,14 @@ deploy() {
   fi
 
   stop_app
+  # Our own app is stopped now, so anything still holding the port is a
+  # foreign process. Catch it BEFORE flipping the symlink.
+  if ! port_free; then
+    fail "port $APP_PORT is already in use by another process.
+    Common cause: the Jenkins container publishes $APP_PORT, so a deploy on
+    the host collides with it. Use a different port, e.g.
+        APP_PORT=8001 ./ci/ci.sh all"
+  fi
   ln -sfn "$release" "$CURRENT"
   start_app "$CURRENT"
 
@@ -131,9 +153,17 @@ deploy() {
     log "release $BUILD is live at http://localhost:$APP_PORT"
     prune
   else
-    log "health check FAILED - rolling back"
-    rollback
-    fail "deploy of build $BUILD rolled back"
+    log "health check FAILED - last lines of the app error log:"
+    tail -15 "$DEPLOY_ROOT/error.log" 2>/dev/null | sed 's/^/    /' || true
+    if [ -L "$PREVIOUS" ]; then
+      log "rolling back"
+      rollback
+      fail "deploy of build $BUILD rolled back"
+    else
+      stop_app
+      rm -f "$CURRENT"
+      fail "build $BUILD would not start and there is no previous release to fall back to (see log above)"
+    fi
   fi
 }
 
