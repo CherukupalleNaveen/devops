@@ -141,10 +141,11 @@ deploy() {
   # Our own app is stopped now, so anything still holding the port is a
   # foreign process. Catch it BEFORE flipping the symlink.
   if ! port_free; then
-    fail "port $APP_PORT is already in use by another process.
-    Common cause: the Jenkins container publishes $APP_PORT, so a deploy on
-    the host collides with it. Use a different port, e.g.
-        APP_PORT=8001 ./ci/ci.sh all"
+    fail "port $APP_PORT is already held by a process this script does not own.
+    On the host: the Jenkins container publishes $APP_PORT, so deploy elsewhere:
+        APP_PORT=8001 ./ci/ci.sh all
+    Inside Jenkins: most likely a stale gunicorn whose pidfile was lost.
+        pkill -f 'gunicorn.*:$APP_PORT'  then deploy again"
   fi
   ln -sfn "$release" "$CURRENT"
   start_app "$CURRENT"
