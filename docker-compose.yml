@@ -14,6 +14,10 @@ services:
       - ./:/srv/repo:ro
     environment:
       JENKINS_URL: http://localhost:8080/
+      # The Git plugin blocks file:// checkouts by default (they are a real
+      # risk on a shared controller). We clone the bind-mounted repo instead of
+      # GitHub, so allow it. Not something you would set on a shared Jenkins.
+      JAVA_OPTS: "-Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true"
 
 volumes:
   jenkins_home:

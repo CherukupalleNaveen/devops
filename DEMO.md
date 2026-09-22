@@ -491,6 +491,18 @@ they are honest.
   the stage instead of silently continuing into a deploy.
 - **The trailing slash matters** on webhook URLs (`/github-webhook/`) when you
   add GitHub later.
+- **Jenkins refuses `file://` checkouts by default.** The Git plugin treats a
+  local-directory remote as insecure, and the build dies at *Declarative:
+  Checkout SCM*. `docker-compose.yml` sets
+  `-Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true` to permit it. This is
+  a demo-only setting — you would never enable it on a shared controller, and
+  the moment you point the job at GitHub instead, it stops being needed.
+- **Put `junit` and `archiveArtifacts` in the stage that produces them, not in
+  the pipeline-level `post`.** If the build fails *before* a workspace exists
+  (bad checkout, bad Jenkinsfile), a pipeline-level `post` running `junit`
+  throws `Required context class hudson.FilePath is missing` — a stack trace
+  that tells you nothing about the actual failure. Stage-level `post` blocks
+  only run when that stage ran, so the real error stays visible.
 - **A missing plugin fails the build before a single stage runs.** `timestamps()`
   needs the Timestamper plugin and `junit` needs the JUnit plugin; without them
   the pipeline will not even compile, and the error names the step, not the
