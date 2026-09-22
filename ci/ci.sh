@@ -17,7 +17,9 @@ SHARED="$DEPLOY_ROOT/shared"                   # the DB: survives every release
 CURRENT="$DEPLOY_ROOT/current"
 PREVIOUS="$DEPLOY_ROOT/previous"
 PIDFILE="$DEPLOY_ROOT/gunicorn.pid"
-APP_PORT="${APP_PORT:-8000}"
+# Defaults to 8081 so a local run never collides with the Jenkins container,
+# which publishes 8000. The Jenkinsfile overrides this to 8000 for the real deploy.
+APP_PORT="${APP_PORT:-8081}"
 KEEP_RELEASES=5
 
 BUILD="${BUILD_NUMBER:-local-$(date +%Y%m%d%H%M%S)}"
@@ -142,8 +144,8 @@ deploy() {
   # foreign process. Catch it BEFORE flipping the symlink.
   if ! port_free; then
     fail "port $APP_PORT is already held by a process this script does not own.
-    On the host: the Jenkins container publishes $APP_PORT, so deploy elsewhere:
-        APP_PORT=8001 ./ci/ci.sh all
+    On the host: the Jenkins container publishes 8000, so deploy elsewhere:
+        APP_PORT=8082 ./ci/ci.sh all
     Inside Jenkins: most likely a stale gunicorn whose pidfile was lost.
         pkill -f 'gunicorn.*:$APP_PORT'  then deploy again"
   fi

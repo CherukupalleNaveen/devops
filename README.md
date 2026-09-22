@@ -24,7 +24,7 @@ what `./ci/ci.sh build` produces and what Jenkins archives as the build artifact
 **Jenkins orchestrates; the shell script builds.** The `Jenkinsfile` only names
 stages and calls `ci/ci.sh`. That is deliberate and it is what mature shops do:
 
-- you can run the exact production pipeline on your laptop — `APP_PORT=8001 ./ci/ci.sh all`
+- you can run the exact production pipeline on your laptop — `./ci/ci.sh all`
 - debugging does not require a Jenkins job, a commit, or a queue slot
 - if you migrate to GitLab CI / GitHub Actions, the script comes with you and
   only the ~40-line orchestration file is rewritten
@@ -124,8 +124,8 @@ Manual rollback is also a button: **Build with Parameters → ROLLBACK ✅**.
 ## 5. Useful commands
 
 ```bash
-APP_PORT=8001 ./ci/ci.sh all     # whole pipeline locally, no Jenkins
-./ci/ci.sh status                # what is live right now
+./ci/ci.sh all        # whole pipeline locally on :8081, no Jenkins
+./ci/ci.sh status     # what is live right now
 docker compose exec jenkins /var/jenkins_home/workspace/taskboard-deploy/ci/ci.sh status
 docker compose logs -f jenkins
 ```
