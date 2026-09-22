@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taskboard</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 34rem; margin: 3rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: .25rem; }
+    .version { color: #888; font-size: .85rem; margin-bottom: 2rem; }
+    form.add { display: flex; gap: .5rem; margin-bottom: 1.5rem; }
+    input[type=text] { flex: 1; padding: .6rem; font-size: 1rem; border: 1px solid #8884; border-radius: 6px; background: transparent; color: inherit; }
+    button { padding: .6rem 1rem; font-size: 1rem; border: 1px solid #8884; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { display: flex; align-items: center; gap: .75rem; padding: .5rem 0; border-bottom: 1px solid #8882; }
+    li.done span { text-decoration: line-through; opacity: .5; }
+    li span { flex: 1; }
+    .empty { color: #888; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>Taskboard</h1>
+  <p class="version">deployed version <strong>{{ version }}</strong></p>
+
+  <form class="add" method="post" action="/tasks">
+    <input type="text" name="title" placeholder="What needs doing?" autofocus>
+    <button type="submit">Add</button>
+  </form>
+
+  <ul>
+    {% for t in tasks %}
+      <li class="{{ 'done' if t['done'] else '' }}">
+        <span>{{ t['title'] }}</span>
+        <form method="post" action="/tasks/{{ t['id'] }}/toggle">
+          <button type="submit">{{ 'undo' if t['done'] else 'done' }}</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="empty">Nothing yet.</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>

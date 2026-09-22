@@ -1,0 +1,7 @@
+.venv/
+.deploy/
+dist/
+build/
+*.egg-info/
+__pycache__/
+test-results.xml
