@@ -3,3 +3,5 @@ git
 github
 github-branch-source
 pipeline-stage-view
+junit
+timestamper

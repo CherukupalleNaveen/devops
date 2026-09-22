@@ -491,6 +491,11 @@ they are honest.
   the stage instead of silently continuing into a deploy.
 - **The trailing slash matters** on webhook URLs (`/github-webhook/`) when you
   add GitHub later.
+- **A missing plugin fails the build before a single stage runs.** `timestamps()`
+  needs the Timestamper plugin and `junit` needs the JUnit plugin; without them
+  the pipeline will not even compile, and the error names the step, not the
+  plugin. Both are listed in `jenkins/plugins.txt`. If you ever see
+  `Invalid option type "..."`, it is a missing plugin, not a syntax error.
 - **Port collisions look like application crashes.** The Jenkins container
   publishes 8000, so a *host* deploy on 8000 failed with a health-check timeout
   that looked like a broken app. Two fixes: local runs now default to 8081, and
